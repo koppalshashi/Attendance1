@@ -11,7 +11,7 @@ const nodemailer = require("nodemailer");
 // 💡 REQUIRED FOR FILE HANDLING & SECURITY
 const multer = require('multer');
 const fs = require('fs');
-const bcrypt = require('bcrypt'); // For password hashing
+const bcrypt = require('bcryptjs'); // For password hashing
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'mysupersecret';
