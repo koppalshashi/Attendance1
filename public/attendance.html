@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance</title>
+<link href="https://fonts.googleapis.com/css?family=Nunito:400,600,700" rel="stylesheet">
+<style>
+  body {
+    font-family: "Nunito", sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    background-image: url('https://images.unsplash.com/photo-1538137524007-21e48fa42f3f?auto=format&fit=crop&w=1834&q=80');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  .scroll-down {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 32px;
+    font-weight: 800;
+    text-align: center;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+  }
+
+  .container {
+    background: rgba(255,255,255,0.95);
+    border-radius: 32px;
+    padding: 40px 30px;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    text-align: center;
+    opacity: 0;
+    transform: translateY(100px) scale(0.5);
+    transition: all 0.6s cubic-bezier(0.445, 0.05, 0, 1);
+  }
+
+  .container.is-open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  h2 {
+    color: #55311c;
+    font-weight: 600;
+    margin-bottom: 25px;
+  }
+
+  .student-info {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    text-align: center; /* Center the contents, including the photo */
+  }
+
+  .student-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.2rem;
+    color: #55311c;
+  }
+
+  .student-info p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+  }
+
+  /* 💡 CSS for the Photo Element */
+  #student-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 10px auto 0;
+    border: 3px solid #8c7569;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  .attendance-buttons {
+    display: flex;
+    justify-content: center;
+  }
+
+  .attendance-buttons button {
+    padding: 20px 88px;
+    font-size: 25px;
+    font-weight: 600;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    color: #fff;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    width: 2000px;
+  }
+
+  .attendance-buttons button.present {
+    background: #4CAF50;
+  }
+  .attendance-buttons button.present:hover {
+    background: #45a049;
+    transform: scale(1.05);
+  }
+
+  @media(max-width: 400px) {
+    .container { padding: 30px 20px; }
+    .attendance-buttons button { font-size: 14px; padding: 12px 20px; }
+    .student-info { font-size: 14px; padding: 15px; }
+  }
+
+  /* 🔹 Circular Logout Button with Text Below */
+  .logout-wrapper {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 100;
+  }
+
+  .logout-btn {
+      background: #f39c12;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 52px;
+      height: 52px;
+      font-size: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .logout-btn:hover {
+      background: #d68910;
+      transform: scale(1.1);
+  }
+
+  .logout-text {
+      margin-top: 5px;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      opacity: 0;
+      transform: translateY(-5px);
+      transition: all 0.3s ease;
+  }
+
+  /* Loader */
+  #loading {
+    display:none; 
+    text-align:center; 
+    margin-top:15px;
+    font-weight:bold;
+    color:#333;
+  }
+
+  .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    animation: spin 1s linear infinite;
+    margin: 8px auto;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="scroll-down">SCROLL DOWN</div>
+<div class="logout-wrapper">
+  <button class="logout-btn" onclick="logout()">🚪</button>
+  <span class="logout-text">Logout</span>
+</div>
+<div class="container" id="attendance-container">
+  <h2>Mark Attendance</h2>
+    
+    <div id="student-info" class="student-info">
+      <h3 id="student-name">Loading...</h3>
+      <p>USN: <span id="student-usn"></span></p>
+      <img id="student-photo" src="/default-placeholder.png" alt="Student Photo">
+  </div>
+
+  <div class="attendance-buttons">
+    <button class="present" onclick="mark('present')">Present</button>
+  </div>
+
+  <div style="margin-top:20px;">
+    <button id="approval-btn" style="display:none; padding:12px 25px; font-size:16px; font-weight:600; border:none; border-radius:20px; cursor:pointer; background:#e74c3c; color:white;">
+      🚨 Request Approval
+    </button>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    ⏳ Marking your attendance, please wait...
+  </div>
+</div>
+
+<script>
+const container = document.getElementById('attendance-container');
+const scrollDown = document.querySelector('.scroll-down');
+
+// 💡 NEW: Get references to the specific elements
+const studentName = document.getElementById('student-name');
+const studentUSN = document.getElementById('student-usn');
+const studentPhoto = document.getElementById('student-photo');
+
+let isOpened = false;
+let campusLocation = null; 
+
+const openContainer = () => {
+  container.classList.add('is-open');
+  scrollDown.style.opacity = '0';
+};
+
+window.addEventListener('scroll', () => {
+  if (window.scrollY > window.innerHeight / 4 && !isOpened) {
+    isOpened = true;
+    openContainer();
+  }
+});
+
+// Automatically open after 1s if user hasn't scrolled
+setTimeout(() => {
+  if (!isOpened) {
+    isOpened = true;
+    openContainer();
+  }
+}, 1000);
+
+// ✅ Haversine formula (No Change)
+function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+// 🔐 GPS attendance with loader + fallback to approval (No Change)
+async function mark(status) {
+  const loader = document.getElementById("loading");
+  loader.style.display = "block";
+
+  try {
+    if (!navigator.geolocation) {
+      loader.style.display = "none";
+      alert("⚠️ GPS not supported in your browser");
+      showApprovalButton();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+
+      if (campusLocation) {
+        const dist = getDistanceFromLatLon(
+          latitude, longitude,
+          campusLocation.latitude, campusLocation.longitude
+        );
+        if (dist > campusLocation.radius) {
+          loader.style.display = "none";
+          alert(`❌ Outside campus zone.\nDistance: ${dist.toFixed(1)}m, Allowed: ${campusLocation.radius}m`);
+          showApprovalButton(); // ✅ show approval option
+          return;
+        }
+      }
+
+      try {
+        const res = await fetch('/api/attendance', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({ status, latitude, longitude })
+        });
+
+        loader.style.display = "none";
+        const data = await res.json();
+        if (res.ok) {
+          alert("✅ " + (data.message || "Attendance marked"));
+        } else {
+          alert("❌ " + (data.error || "Error marking attendance"));
+          showApprovalButton(); // fallback
+        }
+      } catch (err) {
+        loader.style.display = "none";
+        alert("⚠️ Server error");
+        showApprovalButton();
+      }
+
+    }, (err) => {
+      loader.style.display = "none";
+      alert("⚠️ GPS Error: " + err.message);
+      showApprovalButton(); // fallback if GPS fails
+    }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
+
+  } catch (err) {
+    loader.style.display = "none";
+    console.error(err);
+    alert("⚠️ Unexpected error");
+    showApprovalButton();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.href = '/login.html';
+    return;
+  }
+  try {
+    const res = await fetch('/api/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (res.ok) {
+      // 💡 MODIFIED: Set content for the new structure
+      studentName.textContent = `Welcome, ${data.name}`;
+      studentUSN.textContent = data.usn;
+      
+      // Display the photo using the returned path
+      if (data.photoPath) {
+          studentPhoto.src = `/${data.photoPath}`;
+      } else {
+          studentPhoto.src = '/default-placeholder.png'; // Fallback image
+      }
+      
+    } else {
+      alert("⚠️ Session expired");
+      window.location.href = '/login.html';
+    }
+
+    // Fetch campus location (No Change)
+    const locRes = await fetch('/api/admin/campus-location', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (locRes.ok) {
+      campusLocation = await locRes.json();
+    }
+  } catch (err) {
+    console.error(err);
+    alert("⚠️ Unable to fetch student/campus info");
+  }
+});
+
+function logout() {
+  localStorage.removeItem('token');
+  window.location.href = "login.html"; 
+}
+
+function showApprovalButton() {
+  document.getElementById("approval-btn").style.display = "block";
+}
+
+// Handle approval request (No Change)
+document.getElementById("approval-btn").addEventListener("click", async () => {
+  try {
+    const res = await fetch('/api/attendance/request-approval', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('token')
+      },
+      body: JSON.stringify({})
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert("✅ Approval request sent. Wait for admin approval.");
+      document.getElementById("approval-btn").style.display = "none";
+    } else {
+      alert("❌ " + (data.error || "Error sending request"));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("⚠️ Failed to send approval request");
+  }
+});
+</script>
+
+
+</script>
+
+<!-- 🌍 AUTO LANGUAGE TRANSLATION START -->
+<div id="google_translate_element" style="position:fixed;top:10px;right:10px;z-index:9999;"></div>
+
+<script type="text/javascript">
+  function googleTranslateElementInit() {
+    const userLang = (navigator.language || navigator.userLanguage || 'en').split('-')[0];
+    const supported = ['en', 'hi', 'kn'];
+    const targetLang = supported.includes(userLang) ? userLang : 'en';
+
+    new google.translate.TranslateElement({
+      pageLanguage: 'en',
+      includedLanguages: supported.join(','),
+      autoDisplay: false
+    }, 'google_translate_element');
+
+    // Auto-apply detected language
+    setTimeout(() => {
+      const select = document.querySelector('.goog-te-combo');
+      if (select) {
+        select.value = targetLang;
+        select.dispatchEvent(new Event('change'));
+      }
+    }, 1500);
+  }
+</script>
+
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<style>
+  #google_translate_element {
+    background: rgba(255,255,255,0.8);
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .goog-te-banner-frame.skiptranslate {
+    display: none !important;
+  }
+  body {
+    top: 0px !important;
+  }
+</style>
+<!-- 🌍 AUTO LANGUAGE TRANSLATION END -->
+
+<script src="lang.js"></script>
+
+</body>
+</html>

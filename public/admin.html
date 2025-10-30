@@ -1,0 +1,691 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<link href="https://fonts.googleapis.com/css?family=Nunito:400,600,700" rel="stylesheet">
+<style>
+body {
+    font-family: "Nunito", sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1834&q=80');
+    background-size: cover;
+    background-position: center;
+    overflow-x: hidden;
+}
+
+.logout-wrapper {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 100;
+}
+
+.logout-btn {
+    background: #f39c12;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.logout-btn:hover { background: #d68910; transform: scale(1.1); }
+.logout-text { margin-top: 5px; font-size: 14px; font-weight: bold; color: white; opacity: 0; transform: translateY(-5px); transition: all 0.3s ease; }
+.logout-wrapper:hover .logout-text { opacity: 1; transform: translateY(0); }
+
+.container {
+    background: rgba(255,255,255,0.95);
+    border-radius: 12px;
+    padding: 40px 30px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+h2 { margin-top: 0; color: #55311c; }
+
+.list-box {
+    max-height: 120px;
+    overflow-y: auto;
+    margin: 15px 0;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: #f9f9f9;
+}
+#campus-list li {
+    font-size: 1rem;       /* smaller text */
+    padding: 4px 8px;         /* smaller padding */
+    border-radius: 12px;      /* slightly smaller rounded corners */
+    margin-bottom: 4px;       /* less vertical spacing */
+    display: flex;
+    align-items: center;
+    gap: 4px;                 /* smaller gap between text and delete button */
+}
+
+#campus-list li button {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    padding: 0;
+}
+
+ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-start; }
+ul li { background: #3498db; color: white; padding: 7px 14px; border-radius: 20px; font-weight: 600; font-size: 0.9rem; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: transform 0.2s ease; display: flex; align-items: center; gap: 5px; }
+ul li:hover { transform: scale(1.05); background: #2980b9; }
+
+input[type=email], input[type=number] {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 30px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+input:focus { border-color: #8c7569; outline: none; }
+
+button {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin: 12px 0;
+    border: none;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+button.reset { background: #e74c3c; color: white; }
+button.reset:hover { background: #c0392b; transform: scale(1.05); }
+button.send { background: #3498db; color: white; }
+button.send:hover { background: #2980b9; transform: scale(1.05); }
+button.save-location { background: #27ae60; color: white; }
+button.save-location:hover { background: #1e8449; transform: scale(1.05); }
+
+/* 🔔 Toast Notification */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 9999;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Spinner */
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+#location-heading {
+  cursor: pointer;
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: transform 0.2s ease-in-out;
+  animation: glow 1.5s infinite;
+}
+#location-heading:hover { transform: scale(1.05); background: rgba(0, 150, 255, 0.1); }
+@keyframes glow { 0% { color: #007bff; } 50% { color: #ff4081; } 100% { color: #007bff; } }
+
+#arrow { display: inline-block; animation: bounce 1s infinite; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+@media (max-width: 500px) {
+    .container { padding: 30px 20px; }
+    button, input { font-size: 0.9rem; padding: 12px; }
+    h2 { font-size: 1.4rem; }
+    .logout-btn { width: 36px; height: 36px; font-size: 18px; }
+    .logout-text { font-size: 12px; }
+}
+.topbar {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 100;
+}
+
+.approval-line-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+}
+
+.approval-line-btn:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+
+
+</style>
+</head>
+<body>
+
+<div class="logout-wrapper">
+  <button class="logout-btn" onclick="logout()">🚪</button>
+  <span class="logout-text">Logout</span>
+</div>
+
+<div class="container" id="admin-container">
+    <h2>Today's Present Students</h2>
+    <p>Total Present: <span id="total">0</span></p>
+    <div class="list-box"><ul id="list"></ul></div>
+
+    <button class="reset" onclick="resetAll()">⚠️ Reset All Attendance</button>
+
+
+
+<div class="topbar">
+  <button class="approval-line-btn" onclick="window.location.href='admin-requests.html'">📋 Approval Requests</button>
+</div>
+<button class="approval-line-btn" onclick="window.location.href='attendance-export.html'">📊 Export Attendance</button>
+
+
+
+
+
+
+    <input type="email" id="email" placeholder="Enter faculty email" />
+    <button class="send" onclick="sendEmail()">📧 Send Attendance to Email</button>
+
+    <hr style="margin: 20px 0;">
+
+    <h2 id="location-heading" onclick="toggleLocationSettings()">
+      📍 Campus Location Settings <span id="arrow">⬇️</span>
+    </h2>
+
+    <div id="location-settings" style="display:none;">
+      <input type="number" id="latitude" placeholder="Latitude" step="0.00001"/>
+      <input type="number" id="longitude" placeholder="Longitude" step="0.00001"/>
+      <input type="number" id="radius" placeholder="Radius in meters" step="1"/>
+      <button class="save-location" onclick="saveCampusLocation()">💾 Save Location</button>
+      <button class="send" id="detectBtn" onclick="detectLocation()">📍 Use My Location</button>
+      <h3>Saved Campus Locations:</h3>
+      <div class="list-box"><ul id="campus-list"></ul></div>
+    </div>
+    <hr style="margin: 20px 0;">
+
+<h2 id="ip-heading" onclick="toggleIPSettings()">
+  🌐 Allowed IP Settings <span id="ip-arrow">⬇️</span>
+</h2>
+
+<div id="ip-settings" style="display:none;">
+<input type="text" id="ip-address" placeholder="Enter IP or CIDR (e.g., 192.168.1.10 or 192.168.1.0/24)" />
+<button class="save-location" onclick="saveIP()">💾 Save IP</button>
+<button class="save-location" style="background:#3498db;" onclick="detectAndSaveIP()">🌐 Detect My IP</button>
+  <div class="list-box"><ul id="ip-list"></ul></div>
+</div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+
+<script>
+    
+const token = localStorage.getItem('token');
+
+function showToast(message, success=true){
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.style.background = success ? "#27ae60" : "#e74c3c";
+    toast.classList.add("show");
+    setTimeout(()=>{ toast.classList.remove("show"); }, 3000);
+}
+
+async function load() {
+    // Load today's attendance
+    try {
+        const res = await fetch('/api/admin/today', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        document.getElementById('total').innerText = data.total || 0;
+        const list = document.getElementById('list');
+        list.innerHTML = '';
+        if (data.usns && data.usns.length > 0) {
+            const sortedUsns = data.usns.sort((a,b)=>a.localeCompare(b, undefined, {numeric:true}));
+            sortedUsns.forEach((usn,index)=>{
+                const li = document.createElement('li');
+                li.textContent = `${index+1}. ${usn}`;
+                list.appendChild(li);
+            });
+        } else list.innerHTML = 'No attendance marked today.';
+    } catch(err) { console.error(err); showToast("❌ Error loading data", false); }
+
+    // Load all campus locations with delete buttons
+    try {
+        const res = await fetch('/api/admin/campus-locations', { headers: { 'Authorization': 'Bearer ' + token } });
+        const locations = await res.json();
+        const campusList = document.getElementById('campus-list');
+        campusList.innerHTML = '';
+        if(locations && locations.length > 0){
+            locations.forEach((loc,i)=>{
+                const li = document.createElement('li');
+                li.textContent = `#${i+1}: Lat ${loc.latitude}, Lon ${loc.longitude}, R ${loc.radius}m`;
+
+                const delBtn = document.createElement('button');
+                delBtn.textContent = "❌";
+                delBtn.style.marginLeft = "10px";
+                delBtn.style.background = "#e74c3c";
+                delBtn.style.color = "white";
+                delBtn.style.border = "none";
+                delBtn.style.borderRadius = "50%";
+                delBtn.style.width = "20px";
+                delBtn.style.height = "20px";
+                delBtn.style.cursor = "pointer";
+                delBtn.onclick = () => removeCampusLocation(loc._id);
+
+                li.appendChild(delBtn);
+                campusList.appendChild(li);
+            });
+            const lastLoc = locations[locations.length-1];
+            document.getElementById('latitude').value = lastLoc.latitude;
+            document.getElementById('longitude').value = lastLoc.longitude;
+            document.getElementById('radius').value = lastLoc.radius;
+        }
+    } catch(err){ console.error(err); showToast("❌ Failed to load campus locations", false); }
+}
+
+async function resetAll() {
+    if(!confirm("⚠️ Are you sure? This will clear ALL students' attendance and device IDs!")) return;
+    try {
+        const res = await fetch('/api/admin/reset-all', { method:'POST', headers:{'Authorization':'Bearer '+token} });
+        const data = await res.json();
+        showToast(data.message || data.error, !!data.message);
+        load();
+    } catch(err) { console.error(err); showToast("❌ Server error", false); }
+}
+
+async function sendEmail() {
+    const email = document.getElementById('email').value.trim();
+    if(!email){ alert("Please enter a valid email"); return; }
+    try {
+        const res = await fetch('/api/admin/send-email',{
+            method:'POST',
+            headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({email})
+        });
+        const data = await res.json();
+        showToast(data.message || data.error, !!data.message);
+    } catch(err){ console.error(err); showToast("❌ Failed to send email", false); }
+}
+
+async function saveCampusLocation(){
+    const latitude = parseFloat(document.getElementById('latitude').value);
+    const longitude = parseFloat(document.getElementById('longitude').value);
+    const radius = parseFloat(document.getElementById('radius').value);
+    if(isNaN(latitude)||isNaN(longitude)||isNaN(radius)){ alert("Enter valid values"); return; }
+    try {
+        const res = await fetch('/api/admin/campus-location', {
+            method:'POST',
+            headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({latitude,longitude,radius})
+        });
+        const data = await res.json();
+        showToast(data.message || data.error, !!data.message);
+        load();
+    } catch(err){ console.error(err); showToast("❌ Failed to save location", false); }
+}
+
+async function removeCampusLocation(id){
+    if(!confirm("⚠️ Are you sure you want to remove this campus location?")) return;
+    try {
+        const res = await fetch('/api/admin/campus-location/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        showToast(data.message || data.error, !!data.message);
+        load();
+    } catch(err){ console.error(err); showToast("❌ Failed to remove campus location", false); }
+}
+
+async function detectLocation(){
+    const detectBtn = document.getElementById("detectBtn");
+    const originalText = detectBtn.innerHTML;
+    detectBtn.innerHTML = '<span class="spinner"></span> Detecting...';
+    detectBtn.disabled = true;
+
+    if(!navigator.geolocation){
+        alert("❌ Geolocation not supported by this browser.");
+        detectBtn.innerHTML = originalText;
+        detectBtn.disabled = false;
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        async (pos)=>{
+            // Round values to avoid micro changes
+            const lat = pos.coords.latitude.toFixed(5);
+            const lon = pos.coords.longitude.toFixed(5);
+
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lon;
+
+            // Default radius if not filled
+            let radius = parseFloat(document.getElementById('radius').value);
+            if(isNaN(radius) || radius <= 0) radius = 30; // default 30 meters
+
+            // Save immediately
+            try {
+                const res = await fetch('/api/admin/campus-location', {
+                    method:'POST',
+                    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+                    body: JSON.stringify({latitude: lat, longitude: lon, radius})
+                });
+                const data = await res.json();
+                showToast(data.message || data.error, !!data.message);
+                load();
+            } catch(err){
+                console.error(err);
+                showToast("❌ Failed to save detected location", false);
+            }
+
+            detectBtn.innerHTML = originalText;
+            detectBtn.disabled = false;
+        },
+        (err)=>{
+            console.error(err);
+            showToast("❌ Failed to fetch location. Please allow location access.", false);
+            detectBtn.innerHTML = originalText;
+            detectBtn.disabled = false;
+        }
+    );
+}
+
+
+function toggleLocationSettings(){
+    const box = document.getElementById('location-settings');
+    const arrow = document.getElementById('arrow');
+    if (box.style.display === "none") {
+        box.style.display = "block";
+        arrow.textContent = "⬆️"; 
+    } else {
+        box.style.display = "none";
+        arrow.textContent = "⬇️"; 
+    }
+}
+
+function logout(){ 
+    localStorage.removeItem('token'); 
+    window.location.href="login.html"; 
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    load();
+    loadIPs(); // preload IPs
+});
+
+
+
+// Load pending approvals
+async function loadApprovals() {
+    try {
+        const res = await fetch('/api/admin/pending-approvals', { 
+            headers: { 'Authorization': 'Bearer ' + token } 
+        });
+        const requests = await res.json();
+        const list = document.getElementById('approval-list');
+        list.innerHTML = '';
+        if (requests.length > 0) {
+            requests.forEach((req, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index+1}. ${req.name} (${req.usn}) - ${new Date(req.date).toLocaleString()}`;
+
+
+
+                // Approve button
+                const approveBtn = document.createElement('button');
+                approveBtn.textContent = "✅";
+                approveBtn.style.background = "#27ae60";
+                approveBtn.onclick = () => updateApproval(req._id, true);
+
+                // Reject button
+                const rejectBtn = document.createElement('button');
+                rejectBtn.textContent = "❌";
+                rejectBtn.style.background = "#e74c3c";
+                rejectBtn.onclick = () => updateApproval(req._id, false);
+
+                li.appendChild(approveBtn);
+                li.appendChild(rejectBtn);
+                list.appendChild(li);
+            });
+        } else {
+            list.innerHTML = 'No pending approval requests.';
+        }
+    } catch(err) {
+        console.error(err);
+        showToast("Welcome", true);
+    }
+}
+
+// Approve / Reject request
+async function updateApproval(id, approve) {
+    try {
+        const url = approve ? '/api/admin/approve' : '/api/admin/reject';
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        showToast(data.message || data.error, !!data.message);
+        load();         // reload present students
+        loadApprovals();// reload approval list
+    } catch(err) {
+        console.error(err);
+        showToast("❌ Failed to update approval", false);
+    }
+}
+
+async function loadIPs() {
+    try {
+        const res = await fetch('/api/admin/allowed-ips', { headers: { 'Authorization': 'Bearer ' + token } });
+        const ips = await res.json();
+        const ipList = document.getElementById('ip-list');
+        ipList.innerHTML = '';
+        if(ips && ips.length > 0){
+            ips.forEach((ip, i) => {
+                const li = document.createElement('li');
+                li.textContent = `${i+1}. ${ip.address}`;
+                
+                const delBtn = document.createElement('button');
+                delBtn.textContent = "❌";
+                delBtn.style.marginLeft = "10px";
+                delBtn.style.background = "#e74c3c";
+                delBtn.style.color = "white";
+                delBtn.style.border = "none";
+                delBtn.style.borderRadius = "50%";
+                delBtn.style.width = "20px";
+                delBtn.style.height = "20px";
+                delBtn.style.cursor = "pointer";
+                delBtn.onclick = () => removeIP(ip._id);
+
+                li.appendChild(delBtn);
+                ipList.appendChild(li);
+            });
+        } else {
+            ipList.innerHTML = 'No IPs whitelisted.';
+        }
+    } catch(err) {
+        console.error(err);
+        showToast("❌ Failed to load IPs", false);
+    }
+}
+
+async function saveIP(){
+    const address = document.getElementById('ip-address').value.trim();
+    if(!address){ alert("Enter a valid IP or CIDR"); return; }
+    try {
+        const res = await fetch('/api/admin/allowed-ip', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address })
+        });
+        const data = await res.json();
+        showToast(data.message || data.error, !!data.message);
+        document.getElementById('ip-address').value = '';
+        loadIPs();
+    } catch(err){
+        console.error(err);
+        showToast("❌ Failed to save IP", false);
+    }
+}
+
+async function removeIP(id){
+    if(!confirm("⚠️ Remove this IP from whitelist?")) return;
+    try {
+        const res = await fetch('/api/admin/allowed-ip/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        showToast(data.message || data.error, !!data.message);
+        loadIPs();
+    } catch(err){
+        console.error(err);
+        showToast("❌ Failed to remove IP", false);
+    }
+}
+
+function toggleIPSettings(){
+    const box = document.getElementById('ip-settings');
+    const arrow = document.getElementById('ip-arrow');
+    if (box.style.display === "none") {
+        box.style.display = "block";
+        arrow.textContent = "⬆️"; 
+        loadIPs();
+    } else {
+        box.style.display = "none";
+        arrow.textContent = "⬇️"; 
+    }
+}
+
+async function detectAndSaveIP(){
+    try {
+        // Option 1: Fetch public IP via an API
+        const res = await fetch('https://api64.ipify.org?format=json');
+        const data = await res.json();
+        const myIP = data.ip;
+
+        if(!confirm(`Your detected IP is: ${myIP}\nDo you want to whitelist it?`)) return;
+
+        // Send to backend whitelist
+        const addRes = await fetch('/api/admin/allowed-ip', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: myIP })
+        });
+
+        const addData = await addRes.json();
+        showToast(addData.message || addData.error, !!addData.message);
+        loadIPs();
+
+    } catch(err){
+        console.error(err);
+        showToast("❌ Failed to detect IP", false);
+    }
+}
+
+loadApprovals();
+
+
+
+</script>
+
+<!-- 🌍 AUTO LANGUAGE TRANSLATION START -->
+<div id="google_translate_element" style="position:fixed;top:10px;right:10px;z-index:9999;"></div>
+
+<script type="text/javascript">
+  function googleTranslateElementInit() {
+    const userLang = (navigator.language || navigator.userLanguage || 'en').split('-')[0];
+    const supported = ['en', 'hi', 'kn'];
+    const targetLang = supported.includes(userLang) ? userLang : 'en';
+
+    new google.translate.TranslateElement({
+      pageLanguage: 'en',
+      includedLanguages: supported.join(','),
+      autoDisplay: false
+    }, 'google_translate_element');
+
+    // Auto-apply detected language
+    setTimeout(() => {
+      const select = document.querySelector('.goog-te-combo');
+      if (select) {
+        select.value = targetLang;
+        select.dispatchEvent(new Event('change'));
+      }
+    }, 1500);
+  }
+</script>
+
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<style>
+  #google_translate_element {
+    background: rgba(255,255,255,0.8);
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .goog-te-banner-frame.skiptranslate {
+    display: none !important;
+  }
+  body {
+    top: 0px !important;
+  }
+</style>
+<!-- 🌍 AUTO LANGUAGE TRANSLATION END -->
+
+<script src="lang.js"></script>
+
+
+</body>
+</html>

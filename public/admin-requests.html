@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Approval Requests</title>
+<link href="https://fonts.googleapis.com/css?family=Nunito:400,600,700" rel="stylesheet">
+<style>
+body {
+    font-family: "Nunito", sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1834&q=80');
+    background-size: cover;
+    background-position: center;
+    overflow-x: hidden;
+}
+
+.container {
+    background: rgba(255,255,255,0.95);
+    border-radius: 12px;
+    padding: 30px 25px;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+h2 {
+    margin-top: 0;
+    color: #55311c;
+}
+
+.list-box {
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 15px 0;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: #f9f9f9;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul li {
+    background: #3498db;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+ul li:hover {
+    transform: scale(1.02);
+    background: #2980b9;
+}
+
+.action-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btns button {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: white;
+    font-weight: bold;
+}
+
+.approve-btn {
+    background: #27ae60;
+}
+.approve-btn:hover {
+    background: #1e8449;
+}
+.reject-btn {
+    background: #e74c3c;
+}
+.reject-btn:hover {
+    background: #c0392b;
+}
+
+.back-btn {
+    margin-top: 15px;
+    display: inline-block;
+    padding: 10px 16px;
+    background: #f39c12;
+    color: white;
+    border-radius: 8px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: 0.3s;
+}
+.back-btn:hover {
+    background: #d68910;
+}
+
+/* 🔔 Toast Notification */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 9999;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Pending Approval Requests</h2>
+    <div class="list-box"><ul id="approval-list"></ul></div>
+    <a href="admin.html" class="back-btn">⬅ Back to Dashboard</a>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const token = localStorage.getItem('token');
+
+function showToast(message, success=true){
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.style.background = success ? "#27ae60" : "#e74c3c";
+    toast.classList.add("show");
+    setTimeout(()=>{ toast.classList.remove("show"); }, 3000);
+}
+
+// Load pending approvals
+async function loadApprovals() {
+    try {
+        const res = await fetch('/api/admin/pending-approvals', { 
+            headers: { 'Authorization': 'Bearer ' + token } 
+        });
+        const requests = await res.json();
+        const list = document.getElementById('approval-list');
+        list.innerHTML = '';
+        if (requests.length > 0) {
+            requests.forEach((req, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${index+1}. ${req.name} (${req.usn})<br><small>${new Date(req.date).toLocaleString()}</small></span>`;
+                
+                const actions = document.createElement('div');
+                actions.className = "action-btns";
+
+                const approveBtn = document.createElement('button');
+                approveBtn.textContent = "✅";
+                approveBtn.className = "approve-btn";
+                approveBtn.onclick = () => updateApproval(req._id, true);
+
+                const rejectBtn = document.createElement('button');
+                rejectBtn.textContent = "❌";
+                rejectBtn.className = "reject-btn";
+                rejectBtn.onclick = () => updateApproval(req._id, false);
+
+                actions.appendChild(approveBtn);
+                actions.appendChild(rejectBtn);
+                li.appendChild(actions);
+                list.appendChild(li);
+            });
+        } else {
+            list.innerHTML = '<li>No pending approval requests.</li>';
+        }
+    } catch(err) {
+        console.error(err);
+        showToast("❌ Error loading approvals", false);
+    }
+}
+
+// Approve / Reject request
+async function updateApproval(id, approve) {
+    try {
+        const url = approve ? '/api/admin/approve' : '/api/admin/reject';
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        showToast(data.message || data.error, !!data.message);
+        loadApprovals();
+    } catch(err) {
+        console.error(err);
+        showToast("❌ Failed to update approval", false);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadApprovals);
+</script>
+
+
+</script>
+
+<!-- 🌍 AUTO LANGUAGE TRANSLATION START -->
+<div id="google_translate_element" style="position:fixed;top:10px;right:10px;z-index:9999;"></div>
+
+<script type="text/javascript">
+  function googleTranslateElementInit() {
+    const userLang = (navigator.language || navigator.userLanguage || 'en').split('-')[0];
+    const supported = ['en', 'hi', 'kn'];
+    const targetLang = supported.includes(userLang) ? userLang : 'en';
+
+    new google.translate.TranslateElement({
+      pageLanguage: 'en',
+      includedLanguages: supported.join(','),
+      autoDisplay: false
+    }, 'google_translate_element');
+
+    // Auto-apply detected language
+    setTimeout(() => {
+      const select = document.querySelector('.goog-te-combo');
+      if (select) {
+        select.value = targetLang;
+        select.dispatchEvent(new Event('change'));
+      }
+    }, 1500);
+  }
+</script>
+
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<style>
+  #google_translate_element {
+    background: rgba(255,255,255,0.8);
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .goog-te-banner-frame.skiptranslate {
+    display: none !important;
+  }
+  body {
+    top: 0px !important;
+  }
+</style>
+<!-- 🌍 AUTO LANGUAGE TRANSLATION END -->
+
+<script src="lang.js"></script>
+
+</body>
+</html>

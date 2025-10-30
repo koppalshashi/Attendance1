@@ -1,0 +1,14 @@
+{
+  "admin_title": "Admin Panel",
+  "today_present": "Today's Present Students",
+  "total_present": "Total Present",
+  "reset_all": "⚠️ Reset All Attendance",
+  "send_email": "📧 Send Attendance to Email",
+  "campus_location": "📍 Campus Location Settings",
+  "save_location": "💾 Save Location",
+  "detect_location": "📍 Use My Location",
+  "allowed_ip": "🌐 Allowed IP Settings",
+  "logout": "Logout",
+  "approval_requests": "📋 Approval Requests",
+  "export_attendance": "📊 Export Attendance"
+}

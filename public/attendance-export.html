@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Export Attendance</title>
+<link href="https://fonts.googleapis.com/css?family=Nunito:400,600,700" rel="stylesheet">
+<style>
+body {
+  font-family: "Nunito", sans-serif;
+  background: #f0f4f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  max-width: 400px;
+  width: 90%;
+}
+h2 { text-align: center; margin-bottom: 20px; }
+label { font-weight: bold; display: block; margin-top: 10px; }
+select, input[type=date] {
+  width: 100%; padding: 10px; border-radius: 8px;
+  border: 1px solid #ccc; margin-top: 6px;
+}
+button {
+  margin-top: 20px; width: 100%; padding: 12px;
+  border: none; border-radius: 8px;
+  background: #27ae60; color: white; font-size: 16px; cursor: pointer;
+}
+button:hover { background: #219150; }
+.toast {
+  position: fixed; bottom: 20px; right: 20px;
+  background: #333; color: white; padding: 10px 20px;
+  border-radius: 8px; opacity: 0; transition: 0.3s ease;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Export Attendance</h2>
+  <label>Teacher Name</label>
+  <select id="teacher">
+    <option value="">-- Select Teacher --</option>
+    <option>John</option>
+    <option>Priya</option>
+    <option>Arun</option>
+  </select>
+
+  <label>Class Name</label>
+  <select id="class">
+    <option value="">-- Select Class --</option>
+    <option>Class A</option>
+    <option>Class B</option>
+    <option>Class C</option>
+  </select>
+
+  <label>Date</label>
+  <input type="date" id="date" />
+
+  <button onclick="exportToExcel()">💾 Save to Excel</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+async function exportToExcel(){
+  const teacher = document.getElementById('teacher').value;
+  const className = document.getElementById('class').value;
+  const date = document.getElementById('date').value;
+
+  if(!teacher || !className || !date){
+    showToast('⚠️ Please fill all fields');
+    return;
+  }
+
+  const token = localStorage.getItem('token'); 
+  if(!token){
+    showToast('⚠️ Admin not logged in');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/admin/export-attendance', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ teacherName: teacher, className, date })
+    });
+
+    if(!res.ok){
+      // Only try to parse JSON if server returned an error status
+      const errorData = await res.json().catch(() => ({}));
+      showToast(errorData.error || 'Failed to export');
+      return;
+    }
+
+    // ✅ Treat response as Blob (Excel file)
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Attendance_${className}_${date}.xlsx`; // filename
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    showToast('✅ Excel exported successfully!');
+
+  } catch(err){
+    console.error(err);
+    showToast('Server error');
+  }
+}
+
+</script>
+
+
+</script>
+
+<!-- 🌍 AUTO LANGUAGE TRANSLATION START -->
+<div id="google_translate_element" style="position:fixed;top:10px;right:10px;z-index:9999;"></div>
+
+<script type="text/javascript">
+  function googleTranslateElementInit() {
+    const userLang = (navigator.language || navigator.userLanguage || 'en').split('-')[0];
+    const supported = ['en', 'hi', 'kn'];
+    const targetLang = supported.includes(userLang) ? userLang : 'en';
+
+    new google.translate.TranslateElement({
+      pageLanguage: 'en',
+      includedLanguages: supported.join(','),
+      autoDisplay: false
+    }, 'google_translate_element');
+
+    // Auto-apply detected language
+    setTimeout(() => {
+      const select = document.querySelector('.goog-te-combo');
+      if (select) {
+        select.value = targetLang;
+        select.dispatchEvent(new Event('change'));
+      }
+    }, 1500);
+  }
+</script>
+
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<style>
+  #google_translate_element {
+    background: rgba(255,255,255,0.8);
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .goog-te-banner-frame.skiptranslate {
+    display: none !important;
+  }
+  body {
+    top: 0px !important;
+  }
+</style>
+<!-- 🌍 AUTO LANGUAGE TRANSLATION END -->
+
+<script src="lang.js"></script>
+
+</body>
+</html>
